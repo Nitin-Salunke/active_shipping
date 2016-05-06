@@ -8,14 +8,14 @@ module ActiveShipping
     self.retry_safe = true
 
     cattr_reader :name
-    @@name = "FedEx"
+    @@name = 'FedEx'
 
     TEST_URL = 'https://gatewaybeta.fedex.com:443/xml'
     LIVE_URL = 'https://gateway.fedex.com:443/xml'
 
     CARRIER_CODES = {
-      "fedex_ground" => "FDXG",
-      "fedex_express" => "FDXE"
+      'fedex_ground' => 'FDXG',
+      'fedex_express' => 'FDXE'
     }
 
     DELIVERY_ADDRESS_NODE_NAMES = %w(DestinationAddress ActualDeliveryAddress)
@@ -134,6 +134,15 @@ module ActiveShipping
       'TR' => :transfer
     )
 
+    # CHECK is the spelling used in fedex documentation.
+    COD_COLLECTION_TYPE = {
+        'any' => 'ANY',
+        'cash' => 'CASH',
+        'company_check' => 'COMPANY_CHECK',
+        'guaranteed_funds' => 'GUARANTEED_FUNDS',
+        'personal_check' => 'PERSONAL_CHECK'
+    }
+
     def self.service_name_for_code(service_code)
       SERVICE_TYPES[service_code] || "FedEx #{service_code.titleize.sub(/Fedex /, '')}"
     end
@@ -166,7 +175,7 @@ module ActiveShipping
     def create_shipment(origin, destination, packages, options = {})
       options = @options.merge(options)
       packages = Array(packages)
-      raise Error, "Multiple packages are not supported yet." if packages.length > 1
+      raise Error, 'Multiple packages are not supported yet.' if packages.length > 1
 
       request = build_shipment_request(origin, destination, packages, options)
       logger.debug(request) if logger
@@ -235,17 +244,30 @@ module ActiveShipping
                 if reference_numbers.size > 0
                   xml.CustomerReferences do
                     reference_numbers.each do |reference_number_info|
-                      xml.CustomerReferenceType(reference_number_info[:type] || "CUSTOMER_REFERENCE")
+                      xml.CustomerReferenceType(reference_number_info[:type] || 'CUSTOMER_REFERENCE')
                       xml.Value(reference_number_info[:value])
                     end
                   end
                 end
 
                 xml.SpecialServicesRequested do
-                  xml.SpecialServiceTypes("SIGNATURE_OPTION")
+                  xml.SpecialServiceTypes('SIGNATURE_OPTION')
                   xml.SignatureOptionDetail do
                     xml.OptionType(SIGNATURE_OPTION_CODES[package.options[:signature_option] || :default_for_service])
                   end
+
+                  cod_shipment = options[:cod_shipment]
+                  if cod_shipment
+                    xml.SpecialServiceTypes('COD')
+                    xml.CodDetail do
+                      xml.CodCollectionAmount do
+                        xml.Currency cod_shipment[:currency].upcase if cod_shipment[:currency]
+                        xml.Amount cod_shipment[:amount] if cod_shipment[:amount]
+                      end
+                      xml.CollectionType cod_shipment[:collection_type] if cod_shipment[:collection_type]
+                    end
+                  end
+
                 end
               end
             end
