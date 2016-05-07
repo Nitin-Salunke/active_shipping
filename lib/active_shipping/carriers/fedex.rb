@@ -261,10 +261,10 @@ module ActiveShipping
                     xml.SpecialServiceTypes('COD')
                     xml.CodDetail do
                       xml.CodCollectionAmount do
-                        xml.Currency cod_shipment[:currency].upcase if cod_shipment[:currency]
-                        xml.Amount cod_shipment[:amount] if cod_shipment[:amount]
+                        xml.Currency(cod_shipment[:currency].upcase) if cod_shipment[:currency]
+                        xml.Amount(cod_shipment[:amount]) if cod_shipment[:amount]
                       end
-                      xml.CollectionType cod_shipment[:collection_type] if cod_shipment[:collection_type]
+                      xml.CollectionType(COD_COLLECTION_TYPE[cod_shipment[:collection_type]]) if cod_shipment[:collection_type]
                     end
                   end
 
