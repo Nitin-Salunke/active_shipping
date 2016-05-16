@@ -143,6 +143,13 @@ module ActiveShipping
         'personal_check' => 'PERSONAL_CHECK'
     }
 
+    # Customs Clearance Detail
+    # This element is only valid for intra-India shipping. If this element is added on an international shipment, it will cause a hard stop.
+    FREIGHT_ON_VALUE = {
+        'carrier_risk' => 'CARRIER_RISK',
+        'own_risk' => 'OWN_RISK'
+    }
+
     def self.service_name_for_code(service_code)
       SERVICE_TYPES[service_code] || "FedEx #{service_code.titleize.sub(/Fedex /, '')}"
     end
@@ -266,6 +273,10 @@ module ActiveShipping
                       end
                       xml.CollectionType(COD_COLLECTION_TYPE[cod_shipment[:collection_type]]) if cod_shipment[:collection_type]
                     end
+                  end
+
+                  xml.CustomsClearanceDetail do
+                    xml.FreightOnValue('CARRIER_RISK')
                   end
 
                 end
