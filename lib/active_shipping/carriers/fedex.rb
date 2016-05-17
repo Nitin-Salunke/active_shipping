@@ -209,7 +209,7 @@ module ActiveShipping
           xml.RequestedShipment do
             xml.ShipTimestamp(ship_timestamp(options[:turn_around_time]).iso8601(0))
             xml.DropoffType('REGULAR_PICKUP')
-            xml.ServiceType(options[:service_type] || 'FEDEX_GROUND')
+            xml.ServiceType(options[:service_type] || 'STANDARD_OVERNIGHT')
             xml.PackagingType('YOUR_PACKAGING')
 
             xml.Shipper do
@@ -228,6 +228,77 @@ module ActiveShipping
               xml.PaymentType('SENDER')
               xml.Payor do
                 build_shipment_responsible_party_node(xml, options[:shipper] || origin)
+              end
+            end
+
+            xml.SpecialServicesRequested do
+              cod_shipment = options[:cod_shipment]
+              if cod_shipment
+                xml.SpecialServiceTypes('COD')
+                xml.CodDetail do
+                  xml.CodCollectionAmount do
+                    xml.Currency(cod_shipment[:currency].upcase) if cod_shipment[:currency]
+                    xml.Amount(cod_shipment[:amount]) if cod_shipment[:amount]
+                  end
+                  xml.CollectionType('CASH')
+                end
+              end
+            end
+
+            xml.CustomsClearanceDetail do
+              xml.DutiesPayment do
+                xml.PaymentType('SENDER')
+                xml.Payor do
+                  xml.ResponsibleParty do
+                    xml.AccountNumber(604794161)
+                    xml.Contact do
+                      xml.PersonName('Nitin Sender')
+                      xml.EMailAddress('nitin@39shops.com')
+                    end
+                    xml.Address do
+                      xml.StreetLines('Amchya gharakade line 1')
+                      xml.StreetLines('Amchya gharakade line 2')
+                      xml.City('Margao')
+                      xml.StateOrProvinceCode('GA')
+                      xml.PostalCode(403601)
+                      xml.CountryCode('IN')
+                    end
+                  end
+                end
+              end
+
+              xml.CustomsValue do
+                xml.Currency('INR')
+                xml.Amount(100)
+              end
+
+              # xml.DocumentContent('DOCUMENTS_ONLY')
+
+              xml.CommercialInvoice do
+                xml.Purpose('SOLD')
+                # xml.CustomerReferences do
+                #   xml.
+                # end
+              end
+
+              xml.Commodities do
+                xml.NumberOfPieces(1)
+                xml.Description('Pink Toy')
+                xml.CountryOfManufacture('IN')
+                xml.Weight do
+                  xml.Units('KG')
+                  xml.Value(2)
+                end
+                xml.Quantity(1)
+                xml.QuantityUnits('PCS')
+                xml.UnitPrice do
+                  xml.Currency('INR')
+                  xml.Amount(100)
+                end
+                xml.CustomsValue do
+                  xml.Currency('INR')
+                  xml.Amount(100)
+                end
               end
             end
 
@@ -262,23 +333,6 @@ module ActiveShipping
                   xml.SignatureOptionDetail do
                     xml.OptionType(SIGNATURE_OPTION_CODES[package.options[:signature_option] || :default_for_service])
                   end
-
-                  cod_shipment = options[:cod_shipment]
-                  if cod_shipment
-                    xml.SpecialServiceTypes('COD')
-                    xml.CodDetail do
-                      xml.CodCollectionAmount do
-                        xml.Currency(cod_shipment[:currency].upcase) if cod_shipment[:currency]
-                        xml.Amount(cod_shipment[:amount]) if cod_shipment[:amount]
-                      end
-                      xml.CollectionType(COD_COLLECTION_TYPE[cod_shipment[:collection_type]]) if cod_shipment[:collection_type]
-                    end
-                  end
-
-                  xml.CustomsClearanceDetail do
-                    xml.FreightOnValue('CARRIER_RISK')
-                  end
-
                 end
               end
             end
